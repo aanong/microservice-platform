@@ -1,0 +1,134 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: docker.m.daocloud.io/library/mysql:8.0
+    container_name: infra-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      TZ: Asia/Shanghai
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --binlog-row-image=FULL
+      - --default-time-zone=+08:00
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/conf/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - mall-net
+
+  redis:
+    image: docker.m.daocloud.io/library/redis:7.2
+    container_name: infra-redis
+    restart: always
+    command: redis-server --appendonly yes --requirepass '$NMQ#vqc'
+    ports:
+      - "30379:6379"
+    volumes:
+      - ./redis/data:/data
+    networks:
+      - mall-net
+
+  nacos:
+    image: docker.m.daocloud.io/nacos/nacos-server:v2.2.3
+    container_name: infra-nacos
+    restart: always
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      PREFER_HOST_MODE: hostname
+      TZ: Asia/Shanghai
+    ports:
+      - "30048:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - ./nacos/logs:/home/nacos/logs
+      - ./nacos/data:/home/nacos/data
+    networks:
+      - mall-net
+
+  namesrv:
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/rocketmq:5.1.4
+    container_name: rmq-namesrv
+    command: sh mqnamesrv
+    restart: always
+    ports:
+      - "9876:9876"
+    networks:
+      - mall-net
+
+  broker:
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/apache/rocketmq:5.1.4
+    container_name: rmq-broker
+    depends_on:
+      - namesrv
+    restart: always
+    environment:
+      - NAMESRV_ADDR=namesrv:9876
+    command: sh mqbroker -n namesrv:9876 -c /home/rocketmq/conf/broker.conf
+    ports:
+      - "10911:10911"
+      - "10909:10909"
+      - "10912:10912"
+    volumes:
+      - ./rocketmq/conf/broker.conf:/home/rocketmq/conf/broker.conf
+      - ./rocketmq/data/store:/home/rocketmq/store
+      - ./rocketmq/data/logs:/home/rocketmq/logs
+    networks:
+      - mall-net
+
+  dashboard:
+    image: docker.m.daocloud.io/apacherocketmq/rocketmq-dashboard:2.0.0
+    container_name: rmq-dashboard
+    depends_on:
+      - namesrv
+    restart: always
+    environment:
+      - JAVA_OPTS=-Drocketmq.namesrv.addr=namesrv:9876
+    ports:
+      - "8080:8080"
+    networks:
+      - mall-net
+
+  seata-server:
+    image: docker.m.daocloud.io/seataio/seata-server:1.6.1
+    container_name: seata-server
+    restart: always
+    environment:
+      - SEATA_CONFIG_NAME=file:/root/seata-config/registry
+      - TZ=Asia/Shanghai
+    ports:
+      - "8091:8091"
+    volumes:
+      - ./seata/conf:/root/seata-config
+      - ./seata/logs:/root/logs
+    networks:
+      - mall-net
+
+  canal-server:
+    image: docker.m.daocloud.io/canal/canal-server:v1.1.7
+    container_name: canal-server
+    depends_on:
+      - mysql
+      - namesrv
+      - broker
+    restart: always
+    ports:
+      - "11111:11111"
+      - "11112:11112"
+    volumes:
+      - ./canal/conf:/home/admin/canal-server/conf
+      - ./canal/logs:/home/admin/canal-server/logs
+    networks:
+      - mall-net
+
+networks:
+  mall-net:
+    driver: bridge
