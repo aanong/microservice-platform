@@ -10,6 +10,7 @@ import com.demo.user.dto.ValidateTokenResponse;
 import com.demo.user.entity.UserAccount;
 import com.demo.user.exception.BizException;
 import com.demo.user.mapper.UserAccountMapper;
+import com.demo.user.service.AuthService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
