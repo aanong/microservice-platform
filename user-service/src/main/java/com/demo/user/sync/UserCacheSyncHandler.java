@@ -1,19 +1,25 @@
 package com.demo.user.sync;
 
 import com.demo.common.cache.CacheSyncEvent;
+import com.demo.common.cache.CacheSyncEventUtils;
 import com.demo.common.cache.CacheSyncHandler;
+import com.demo.common.cache.RedisJsonCacheHelper;
 import com.demo.user.cache.UserCacheKeys;
-import java.util.Map;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+/**
+ * 用户服务缓存同步处理器。
+ * <p>
+ * 改用公共模块的 {@link RedisJsonCacheHelper} 替代直接使用 StringRedisTemplate，
+ * 使用 {@link CacheSyncEventUtils} 消除重复工具方法。
+ */
 @Component
 public class UserCacheSyncHandler implements CacheSyncHandler {
 
-    private final StringRedisTemplate stringRedisTemplate;
+    private final RedisJsonCacheHelper cacheHelper;
 
-    public UserCacheSyncHandler(StringRedisTemplate stringRedisTemplate) {
-        this.stringRedisTemplate = stringRedisTemplate;
+    public UserCacheSyncHandler(RedisJsonCacheHelper cacheHelper) {
+        this.cacheHelper = cacheHelper;
     }
 
     @Override
@@ -23,33 +29,9 @@ public class UserCacheSyncHandler implements CacheSyncHandler {
 
     @Override
     public void handle(CacheSyncEvent event) {
-        Long userId = getLong(event, "id");
+        Long userId = CacheSyncEventUtils.getLong(event, "id");
         if (userId != null) {
-            stringRedisTemplate.delete(UserCacheKeys.userProfile(userId));
+            cacheHelper.delete(UserCacheKeys.userProfile(userId));
         }
-    }
-
-    private Long getLong(CacheSyncEvent event, String key) {
-        Object value = pick(event.getAfter(), key);
-        if (value == null) {
-            value = pick(event.getBefore(), key);
-        }
-        if (value == null && event.getPk() != null) {
-            value = event.getPk().get(key);
-        }
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        return Long.valueOf(String.valueOf(value));
-    }
-
-    private Object pick(Map<String, Object> data, String key) {
-        if (data == null) {
-            return null;
-        }
-        return data.get(key);
     }
 }

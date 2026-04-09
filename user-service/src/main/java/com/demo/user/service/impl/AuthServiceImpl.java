@@ -1,6 +1,7 @@
 package com.demo.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.demo.common.cache.RedisJsonCacheHelper;
 import com.demo.user.cache.UserCacheKeys;
 import com.demo.user.dto.LoginRequest;
 import com.demo.user.dto.LoginResponse;
@@ -9,15 +10,12 @@ import com.demo.user.dto.ValidateTokenResponse;
 import com.demo.user.entity.UserAccount;
 import com.demo.user.exception.BizException;
 import com.demo.user.mapper.UserAccountMapper;
-import com.demo.user.service.AuthService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,24 +25,17 @@ public class AuthServiceImpl implements AuthService {
 
     private static final long TOKEN_EXPIRE_DAYS = 7L;
     private static final String TOKEN_KEY_PREFIX = "login:token:";
-    private static final String NULL_PLACEHOLDER = "__NULL__";
 
     private final UserAccountMapper userAccountMapper;
     private final StringRedisTemplate stringRedisTemplate;
-    private final ObjectMapper objectMapper;
-
-    @Value("${cache.ttl.detail-seconds:300}")
-    private long userDetailTtlSeconds;
-
-    @Value("${cache.ttl.null-seconds:30}")
-    private long nullTtlSeconds;
+    private final RedisJsonCacheHelper cacheHelper;
 
     public AuthServiceImpl(UserAccountMapper userAccountMapper,
                            StringRedisTemplate stringRedisTemplate,
-                           ObjectMapper objectMapper) {
+                           RedisJsonCacheHelper cacheHelper) {
         this.userAccountMapper = userAccountMapper;
         this.stringRedisTemplate = stringRedisTemplate;
-        this.objectMapper = objectMapper;
+        this.cacheHelper = cacheHelper;
     }
 
     @Override
@@ -133,39 +124,22 @@ public class AuthServiceImpl implements AuthService {
 
         Long userId = validate.getUserId();
         String key = UserCacheKeys.userProfile(userId);
-        UserAccount cached = getCachedUser(key);
+
+        // 使用公共缓存工具类读取缓存
+        UserAccount cached = cacheHelper.getObject(key, UserAccount.class);
         if (cached != null) {
             return cached;
         }
 
         UserAccount account = userAccountMapper.selectById(userId);
         if (account == null) {
-            stringRedisTemplate.opsForValue().set(key, NULL_PLACEHOLDER, Duration.ofSeconds(nullTtlSeconds));
+            cacheHelper.setNull(key);
             throw new BizException("User not found");
         }
 
-        try {
-            stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(account), Duration.ofSeconds(userDetailTtlSeconds));
-        } catch (Exception ignored) {
-            // Keep auth flow non-blocking when cache serialization fails.
-        }
+        // 使用公共缓存工具类写入缓存
+        cacheHelper.setDetail(key, account);
         return account;
-    }
-
-    private UserAccount getCachedUser(String key) {
-        String value = stringRedisTemplate.opsForValue().get(key);
-        if (value == null) {
-            return null;
-        }
-        if (NULL_PLACEHOLDER.equals(value)) {
-            return null;
-        }
-        try {
-            return objectMapper.readValue(value, UserAccount.class);
-        } catch (Exception ex) {
-            stringRedisTemplate.delete(key);
-            return null;
-        }
     }
 
     private String sha256(String raw) {
@@ -182,3 +156,4 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 }
+

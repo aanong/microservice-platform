@@ -3,7 +3,7 @@ package com.demo.order.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.demo.common.entity.Product;
 import com.demo.order.cache.OrderCacheKeys;
-import com.demo.order.cache.RedisJsonCacheHelper;
+import com.demo.common.cache.RedisJsonCacheHelper;
 import com.demo.order.constant.BizConstants;
 import com.demo.order.dto.CreateOrderRequest;
 import com.demo.order.dto.OrderDetailResponse;

@@ -1,7 +1,7 @@
 package com.demo.stock.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.demo.stock.cache.RedisJsonCacheHelper;
+import com.demo.common.cache.RedisJsonCacheHelper;
 import com.demo.stock.cache.StockCacheKeys;
 import com.demo.stock.dto.CategoryCreateRequest;
 import com.demo.stock.dto.CategoryUpdateRequest;

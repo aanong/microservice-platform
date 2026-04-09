@@ -1,15 +1,21 @@
 package com.demo.order.sync;
 
 import com.demo.common.cache.CacheSyncEvent;
+import com.demo.common.cache.CacheSyncEventUtils;
 import com.demo.common.cache.CacheSyncHandler;
+import com.demo.common.cache.RedisJsonCacheHelper;
 import com.demo.order.cache.OrderCacheKeys;
-import com.demo.order.cache.RedisJsonCacheHelper;
 import com.demo.order.entity.OrderMain;
 import com.demo.order.mapper.OrderMainMapper;
 import java.time.Duration;
-import java.util.Map;
 import org.springframework.stereotype.Component;
 
+/**
+ * 订单服务缓存同步处理器。
+ * <p>
+ * 使用公共模块的 {@link RedisJsonCacheHelper} 和 {@link CacheSyncEventUtils}，
+ * 消除原先重复的 getLong/pick 工具方法。
+ */
 @Component
 public class OrderCacheSyncHandler implements CacheSyncHandler {
 
@@ -44,7 +50,7 @@ public class OrderCacheSyncHandler implements CacheSyncHandler {
     public void handle(CacheSyncEvent event) {
         String table = event.getTable().toLowerCase();
         if ("cart_item".equals(table)) {
-            Long userId = getLong(event, "user_id");
+            Long userId = CacheSyncEventUtils.getLong(event, "user_id");
             if (userId != null) {
                 cacheHelper.delete(OrderCacheKeys.cartList(userId));
             }
@@ -52,13 +58,13 @@ public class OrderCacheSyncHandler implements CacheSyncHandler {
         }
 
         if ("order_main".equals(table)) {
-            Long orderId = getLong(event, "id");
-            Long userId = getLong(event, "user_id");
+            Long orderId = CacheSyncEventUtils.getLong(event, "id");
+            Long userId = CacheSyncEventUtils.getLong(event, "user_id");
             invalidateOrder(orderId, userId);
             return;
         }
 
-        Long orderId = getLong(event, "order_id");
+        Long orderId = CacheSyncEventUtils.getLong(event, "order_id");
         invalidateOrder(orderId, null);
     }
 
@@ -85,29 +91,5 @@ public class OrderCacheSyncHandler implements CacheSyncHandler {
         }
         cacheHelper.setString(OrderCacheKeys.orderOwner(orderId), String.valueOf(order.getUserId()), Duration.ofHours(24));
         return order.getUserId();
-    }
-
-    private Long getLong(CacheSyncEvent event, String key) {
-        Object value = pick(event.getAfter(), key);
-        if (value == null) {
-            value = pick(event.getBefore(), key);
-        }
-        if (value == null && event.getPk() != null) {
-            value = event.getPk().get(key);
-        }
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        return Long.valueOf(String.valueOf(value));
-    }
-
-    private Object pick(Map<String, Object> data, String key) {
-        if (data == null) {
-            return null;
-        }
-        return data.get(key);
     }
 }
