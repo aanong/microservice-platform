@@ -1,0 +1,44 @@
+CREATE DATABASE IF NOT EXISTS microservice_mall DEFAULT CHARACTER SET utf8mb4;
+USE microservice_mall;
+
+CREATE TABLE IF NOT EXISTS mall_category (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(64) NOT NULL,
+    code VARCHAR(64) NOT NULL,
+    sort INT NOT NULL DEFAULT 0,
+    status TINYINT NOT NULL DEFAULT 1,
+    remark VARCHAR(255),
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_category_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS mall_product (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(128) NOT NULL,
+    sku_code VARCHAR(64) NOT NULL,
+    category_id BIGINT NOT NULL,
+    price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    stock INT NOT NULL DEFAULT 0,
+    status TINYINT NOT NULL DEFAULT 1,
+    description VARCHAR(500),
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_product_sku (sku_code),
+    KEY idx_product_category_id (category_id),
+    CONSTRAINT fk_product_category FOREIGN KEY (category_id) REFERENCES mall_category(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS undo_log (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  branch_id BIGINT(20) NOT NULL,
+  xid VARCHAR(128) NOT NULL,
+  context VARCHAR(128) NOT NULL,
+  rollback_info LONGBLOB NOT NULL,
+  log_status INT(11) NOT NULL,
+  log_created DATETIME NOT NULL,
+  log_modified DATETIME NOT NULL,
+  ext VARCHAR(100) DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY ux_undo_log (xid, branch_id)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;

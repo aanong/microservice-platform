@@ -1,0 +1,62 @@
+server:
+  port: 8082
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.5.79:3306/microservice_mall?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: root
+    password: Scgykjyxgs@2025
+  redis:
+    host: ${REDIS_HOST:192.168.5.132}
+    port: ${REDIS_PORT:30379}
+    password: "${REDIS_PASSWORD:$NMQ#vqc}"
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+rocketmq:
+  name-server: 192.168.5.79:9876
+  producer:
+    group: order-service-producer-group
+
+mall:
+  mq:
+    order-event-topic: order-event-topic
+    order-event-enabled: true
+  cache-sync:
+    topic: cache-sync-order
+    consumer-group: order-cache-sync-group
+    enabled: true
+    max-lag-ms: 500
+
+cache:
+  sync:
+    mode: invalidate
+  ttl:
+    detail-seconds: 300
+    list-seconds: 60
+    null-seconds: 30
+
+seata:
+  enabled: true
+  application-id: order-service
+  tx-service-group: order-service-seata-tx-group
+  enable-auto-data-source-proxy: true
+  data-source-proxy-mode: AT
+  service:
+    vgroup-mapping:
+      order-service-seata-tx-group: default
+    grouplist:
+      default: 192.168.5.79:8091
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

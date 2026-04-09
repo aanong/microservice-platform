@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.order.mapper.ShipmentTraceMapper">
+
+    <resultMap id="TraceMap" type="com.demo.order.entity.ShipmentTrace">
+        <id property="id" column="id"/>
+        <result property="shipmentId" column="shipment_id"/>
+        <result property="traceStatus" column="trace_status"/>
+        <result property="content" column="content"/>
+        <result property="traceTime" column="trace_time"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectByShipmentId" resultMap="TraceMap">
+        SELECT * FROM shipment_trace WHERE shipment_id = #{shipmentId} ORDER BY id ASC
+    </select>
+</mapper>

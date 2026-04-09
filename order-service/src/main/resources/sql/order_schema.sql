@@ -1,0 +1,154 @@
+USE microservice_mall;
+
+CREATE TABLE IF NOT EXISTS cart_item (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    product_name VARCHAR(128) NOT NULL,
+    sku_code VARCHAR(64) NOT NULL,
+    price DECIMAL(12,2) NOT NULL,
+    quantity INT NOT NULL,
+    checked TINYINT NOT NULL DEFAULT 1,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_cart_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS coupon_template (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(32) NOT NULL,
+    threshold_amount DECIMAL(12,2) DEFAULT NULL,
+    discount_amount DECIMAL(12,2) DEFAULT NULL,
+    seckill_price DECIMAL(12,2) DEFAULT NULL,
+    seckill_product_id BIGINT DEFAULT NULL,
+    start_time DATETIME DEFAULT NULL,
+    end_time DATETIME DEFAULT NULL,
+    total_count INT NOT NULL,
+    remain_count INT NOT NULL,
+    status TINYINT NOT NULL DEFAULT 1,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS coupon_user (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    template_id BIGINT NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    used_time DATETIME DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_coupon_user (user_id),
+    KEY idx_coupon_template (template_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_main (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_no VARCHAR(64) NOT NULL,
+    user_id BIGINT NOT NULL,
+    order_status VARCHAR(32) NOT NULL,
+    payment_status VARCHAR(32) NOT NULL,
+    shipping_status VARCHAR(32) NOT NULL,
+    total_amount DECIMAL(12,2) NOT NULL,
+    discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    pay_amount DECIMAL(12,2) NOT NULL,
+    coupon_user_id BIGINT DEFAULT NULL,
+    paid_time DATETIME DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_order_no (order_no),
+    KEY idx_order_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_item (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    order_no VARCHAR(64) NOT NULL,
+    product_id BIGINT NOT NULL,
+    product_name VARCHAR(128) NOT NULL,
+    sku_code VARCHAR(64) NOT NULL,
+    sale_price DECIMAL(12,2) NOT NULL,
+    quantity INT NOT NULL,
+    total_amount DECIMAL(12,2) NOT NULL,
+    real_pay_amount DECIMAL(12,2) NOT NULL,
+    refunded_quantity INT NOT NULL DEFAULT 0,
+    refunded_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_order_item_order (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS order_status_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    order_no VARCHAR(64) NOT NULL,
+    from_status VARCHAR(32) DEFAULT NULL,
+    to_status VARCHAR(32) NOT NULL,
+    remark VARCHAR(255) DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_log_order (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS payment_record (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    order_no VARCHAR(64) NOT NULL,
+    pay_no VARCHAR(64) NOT NULL,
+    pay_type VARCHAR(32) NOT NULL,
+    pay_status VARCHAR(32) NOT NULL,
+    pay_amount DECIMAL(12,2) NOT NULL,
+    pay_time DATETIME NOT NULL,
+    remark VARCHAR(255) DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_pay_no (pay_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS refund_main (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    refund_no VARCHAR(64) NOT NULL,
+    order_id BIGINT NOT NULL,
+    order_no VARCHAR(64) NOT NULL,
+    user_id BIGINT NOT NULL,
+    refund_type VARCHAR(32) NOT NULL,
+    refund_status VARCHAR(32) NOT NULL,
+    refund_amount DECIMAL(12,2) NOT NULL,
+    reason VARCHAR(255) DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_refund_no (refund_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS refund_item (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    refund_id BIGINT NOT NULL,
+    order_item_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    refund_amount DECIMAL(12,2) NOT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_refund_item_refund (refund_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS shipment (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    order_no VARCHAR(64) NOT NULL,
+    carrier_code VARCHAR(64) NOT NULL,
+    tracking_no VARCHAR(64) NOT NULL,
+    shipment_status VARCHAR(32) NOT NULL,
+    shipped_time DATETIME DEFAULT NULL,
+    signed_time DATETIME DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_shipment_order (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS shipment_trace (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    shipment_id BIGINT NOT NULL,
+    trace_status VARCHAR(32) NOT NULL,
+    content VARCHAR(255) NOT NULL,
+    trace_time DATETIME NOT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_shipment_trace_shipment (shipment_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

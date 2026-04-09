@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    ports:
+      - "8848:8848"
+    environment:
+      - MODE=standalone
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "3306:3306"
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --binlog-row-image=FULL
+
+  redis:
+    image: redis:7.2
+    command: redis-server --requirepass 123456
+    ports:
+      - "6379:6379"
+
+  seata:
+    image: seataio/seata-server:1.6.1
+    ports:
+      - "8091:8091"
+
+  namesrv:
+    image: apache/rocketmq:5.1.4
+    command: sh mqnamesrv
+    ports:
+      - "9876:9876"
+
+  broker:
+    image: apache/rocketmq:5.1.4
+    command: sh mqbroker -n namesrv:9876
+    ports:
+      - "10911:10911"
+
+  canal-server:
+    image: canal/canal-server:v1.1.7
+    depends_on:
+      - mysql
+      - namesrv
+      - broker
+    environment:
+      - canal.instance.mysql.slaveId=1234
+      - canal.instance.master.address=mysql:3306
+      - canal.instance.dbUsername=root
+      - canal.instance.dbPassword=123456
+    ports:
+      - "11111:11111"

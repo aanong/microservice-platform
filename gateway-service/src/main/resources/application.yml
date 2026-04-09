@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: ${USER_SERVICE_URI:lb://user-service}
+          predicates:
+            - Path=/api/user/**
+        - id: order-service
+          uri: ${ORDER_SERVICE_URI:lb://order-service}
+          predicates:
+            - Path=/api/order/**
+          filters:
+            - RewritePath=/api/order/?(?<segment>.*), /api/${segment}
+        - id: order-service-direct
+          uri: ${ORDER_SERVICE_URI:lb://order-service}
+          predicates:
+            - Path=/api/cart,/api/cart/**,/api/orders,/api/orders/**,/api/payments,/api/payments/**,/api/coupons,/api/coupons/**,/api/refunds,/api/refunds/**,/api/logistics,/api/logistics/**
+        - id: stock-service-direct
+          uri: ${STOCK_SERVICE_URI:lb://stock-service}
+          predicates:
+            - Path=/api/categories,/api/categories/**,/api/products,/api/products/**
+        - id: stock-service
+          uri: ${STOCK_SERVICE_URI:lb://stock-service}
+          predicates:
+            - Path=/api/stock/**
+          filters:
+            - RewritePath=/api/stock/?(?<segment>.*), /api/${segment}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

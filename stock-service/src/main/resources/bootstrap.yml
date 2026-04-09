@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: stock-service
+  cloud:
+    nacos:
+      discovery:
+        enabled: ${NACOS_DISCOVERY_ENABLED:true}
+        register-enabled: ${NACOS_REGISTER_ENABLED:true}
+        server-addr: ${NACOS_SERVER_ADDR:192.168.5.132:30048}
+        namespace: ${NACOS_NAMESPACE:e1968f3b-6dfb-4d8d-9f4b-83f65d4df297}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+      config:
+        enabled: ${NACOS_CONFIG_ENABLED:true}
+        server-addr: ${NACOS_SERVER_ADDR:192.168.5.132:30048}
+        namespace: ${NACOS_NAMESPACE:e1968f3b-6dfb-4d8d-9f4b-83f65d4df297}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+        file-extension: yaml
+        group: DEFAULT_GROUP
