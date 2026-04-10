@@ -15,6 +15,9 @@ public class OrderItem {
     private Long id;
     private Long orderId;
     private String orderNo;
+    private Long skuId;
+    private Long spuId;
+    private String specJson;
     private Long productId;
     private String productName;
     private String skuCode;

@@ -5,12 +5,85 @@ CREATE TABLE IF NOT EXISTS mall_category (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(64) NOT NULL,
     code VARCHAR(64) NOT NULL,
+    parent_id BIGINT NOT NULL DEFAULT 0,
+    level TINYINT NOT NULL DEFAULT 1,
+    image_url VARCHAR(255) DEFAULT NULL,
     sort INT NOT NULL DEFAULT 0,
     status TINYINT NOT NULL DEFAULT 1,
     remark VARCHAR(255),
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_category_code (code)
+    UNIQUE KEY uk_category_code (code),
+    KEY idx_category_parent_id (parent_id),
+    KEY idx_category_level (level)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS mall_brand (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(64) NOT NULL,
+    code VARCHAR(64) NOT NULL,
+    logo_url VARCHAR(255) DEFAULT NULL,
+    sort INT NOT NULL DEFAULT 0,
+    status TINYINT NOT NULL DEFAULT 1,
+    remark VARCHAR(255),
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_brand_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS mall_spu (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    spu_code VARCHAR(64) NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    category_id BIGINT NOT NULL,
+    brand_id BIGINT NOT NULL,
+    main_image_url VARCHAR(255) DEFAULT NULL,
+    detail_images TEXT,
+    description VARCHAR(500),
+    status TINYINT NOT NULL DEFAULT 1,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_spu_code (spu_code),
+    KEY idx_spu_category_id (category_id),
+    KEY idx_spu_brand_id (brand_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS mall_spu_spec (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    spu_id BIGINT NOT NULL,
+    spec_name VARCHAR(64) NOT NULL,
+    sort INT NOT NULL DEFAULT 0,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_spu_spec_spu_id (spu_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS mall_spu_spec_value (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    spu_spec_id BIGINT NOT NULL,
+    spec_value VARCHAR(64) NOT NULL,
+    sort INT NOT NULL DEFAULT 0,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_spu_spec_value_spu_spec_id (spu_spec_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS mall_sku (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    sku_code VARCHAR(64) NOT NULL,
+    spu_id BIGINT NOT NULL,
+    spec_signature VARCHAR(255) NOT NULL,
+    spec_json VARCHAR(1000) NOT NULL,
+    sale_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    stock INT NOT NULL DEFAULT 0,
+    status TINYINT NOT NULL DEFAULT 0,
+    main_image_url VARCHAR(255) DEFAULT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_sku_code (sku_code),
+    UNIQUE KEY uk_sku_spu_spec_signature (spu_id, spec_signature),
+    KEY idx_sku_spu_id (spu_id),
+    KEY idx_sku_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS mall_product (
@@ -25,8 +98,7 @@ CREATE TABLE IF NOT EXISTS mall_product (
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_product_sku (sku_code),
-    KEY idx_product_category_id (category_id),
-    CONSTRAINT fk_product_category FOREIGN KEY (category_id) REFERENCES mall_category(id)
+    KEY idx_product_category_id (category_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS undo_log (

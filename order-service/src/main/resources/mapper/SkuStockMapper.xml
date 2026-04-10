@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.order.mapper.SkuStockMapper">
+
+    <resultMap id="SkuMap" type="com.demo.common.entity.Sku">
+        <id property="id" column="id"/>
+        <result property="skuCode" column="sku_code"/>
+        <result property="spuId" column="spu_id"/>
+        <result property="specSignature" column="spec_signature"/>
+        <result property="specJson" column="spec_json"/>
+        <result property="salePrice" column="sale_price"/>
+        <result property="stock" column="stock"/>
+        <result property="status" column="status"/>
+        <result property="mainImageUrl" column="main_image_url"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="spuName" column="spu_name"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="SkuMap">
+        SELECT sk.*, sp.name as spu_name 
+        FROM mall_sku sk 
+        LEFT JOIN mall_spu sp ON sk.spu_id = sp.id 
+        WHERE sk.id = #{id}
+    </select>
+
+    <update id="deductStock">
+        UPDATE mall_sku
+        SET stock = stock - #{qty}, update_time = NOW()
+        WHERE id = #{id} AND stock >= #{qty}
+    </update>
+
+    <update id="addStock">
+        UPDATE mall_sku
+        SET stock = stock + #{qty}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+</mapper>

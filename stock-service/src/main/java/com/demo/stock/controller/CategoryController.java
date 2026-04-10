@@ -2,6 +2,7 @@ package com.demo.stock.controller;
 
 import com.demo.common.api.ApiResponse;
 import com.demo.stock.dto.CategoryCreateRequest;
+import com.demo.stock.dto.CategoryTreeNode;
 import com.demo.stock.dto.CategoryUpdateRequest;
 import com.demo.common.entity.Category;
 import com.demo.stock.service.CategoryService;
@@ -52,5 +53,10 @@ public class CategoryController {
     @GetMapping
     public ApiResponse<List<Category>> list(@RequestParam(required = false) String keyword) {
         return ApiResponse.ok(categoryService.list(keyword));
+    }
+
+    @GetMapping("/tree")
+    public ApiResponse<List<CategoryTreeNode>> tree() {
+        return ApiResponse.ok(categoryService.tree());
     }
 }

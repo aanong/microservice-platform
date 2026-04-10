@@ -25,6 +25,7 @@ import com.demo.order.mapper.OrderStatusLogMapper;
 import com.demo.order.mapper.ProductStockMapper;
 import com.demo.order.mapper.ShipmentMapper;
 import com.demo.order.mapper.ShipmentTraceMapper;
+import com.demo.order.mapper.SkuStockMapper;
 import com.demo.order.service.OrderService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.seata.spring.annotation.GlobalTransactional;
@@ -51,6 +52,7 @@ public class OrderServiceImpl implements OrderService {
     private final ShipmentMapper shipmentMapper;
     private final ShipmentTraceMapper shipmentTraceMapper;
     private final RedisJsonCacheHelper cacheHelper;
+    private final SkuStockMapper skuStockMapper;
 
     public OrderServiceImpl(CartItemMapper cartItemMapper,
                             CouponUserMapper couponUserMapper,
@@ -61,7 +63,8 @@ public class OrderServiceImpl implements OrderService {
                             ProductStockMapper productStockMapper,
                             ShipmentMapper shipmentMapper,
                             ShipmentTraceMapper shipmentTraceMapper,
-                            RedisJsonCacheHelper cacheHelper) {
+                            RedisJsonCacheHelper cacheHelper,
+                            SkuStockMapper skuStockMapper) {
         this.cartItemMapper = cartItemMapper;
         this.couponUserMapper = couponUserMapper;
         this.couponTemplateMapper = couponTemplateMapper;
@@ -72,6 +75,7 @@ public class OrderServiceImpl implements OrderService {
         this.shipmentMapper = shipmentMapper;
         this.shipmentTraceMapper = shipmentTraceMapper;
         this.cacheHelper = cacheHelper;
+        this.skuStockMapper = skuStockMapper;
     }
 
     @Override
@@ -92,17 +96,31 @@ public class OrderServiceImpl implements OrderService {
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (CartItem item : cartItems) {
-            Product product = productStockMapper.selectById(item.getProductId());
-            if (product == null) {
-                throw new BizException("Product not found: " + item.getProductId());
+            if (item.getSkuId() != null) {
+                com.demo.common.entity.Sku sku = skuStockMapper.selectById(item.getSkuId());
+                if (sku == null) {
+                    throw new BizException("SKU not found: " + item.getSkuId());
+                }
+                if (sku.getStock() == null || sku.getStock() < item.getQuantity()) {
+                    throw new BizException("Insufficient stock: " + item.getProductName());
+                }
+                item.setPrice(sku.getSalePrice());
+                item.setProductName(sku.getSpuName());
+                item.setSkuCode(sku.getSkuCode());
+                totalAmount = totalAmount.add(sku.getSalePrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+            } else {
+                Product product = productStockMapper.selectById(item.getProductId());
+                if (product == null) {
+                    throw new BizException("Product not found: " + item.getProductId());
+                }
+                if (product.getStock() == null || product.getStock() < item.getQuantity()) {
+                    throw new BizException("Insufficient stock: " + item.getProductName());
+                }
+                item.setPrice(product.getPrice());
+                item.setProductName(product.getName());
+                item.setSkuCode(product.getSkuCode());
+                totalAmount = totalAmount.add(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             }
-            if (product.getStock() == null || product.getStock() < item.getQuantity()) {
-                throw new BizException("Insufficient stock: " + item.getProductName());
-            }
-            item.setPrice(product.getPrice());
-            item.setProductName(product.getName());
-            item.setSkuCode(product.getSkuCode());
-            totalAmount = totalAmount.add(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
         }
 
         CouponUser couponUser = null;
@@ -161,6 +179,9 @@ public class OrderServiceImpl implements OrderService {
             OrderItem orderItem = new OrderItem();
             orderItem.setOrderId(order.getId());
             orderItem.setOrderNo(orderNo);
+            orderItem.setSkuId(cart.getSkuId());
+            orderItem.setSpuId(cart.getSpuId());
+            orderItem.setSpecJson(cart.getSpecJson());
             orderItem.setProductId(cart.getProductId());
             orderItem.setProductName(cart.getProductName());
             orderItem.setSkuCode(cart.getSkuCode());
@@ -174,9 +195,14 @@ public class OrderServiceImpl implements OrderService {
             orderItem.setUpdateTime(now);
             orderItemMapper.insert(orderItem);
 
-            int updated = productStockMapper.deductStock(cart.getProductId(), cart.getQuantity());
+            int updated;
+            if (cart.getSkuId() != null) {
+                updated = skuStockMapper.deductStock(cart.getSkuId(), cart.getQuantity());
+            } else {
+                updated = productStockMapper.deductStock(cart.getProductId(), cart.getQuantity());
+            }
             if (updated <= 0) {
-                throw new BizException("Insufficient stock for product: " + cart.getProductId());
+                throw new BizException("Insufficient stock");
             }
 
             cartItemMapper.deleteById(cart.getId());
@@ -264,13 +290,14 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (BizConstants.COUPON_TYPE_FLASH_SALE.equals(template.getType())) {
-            if (template.getSeckillProductId() == null || template.getSeckillPrice() == null) {
+            if ((template.getSeckillProductId() == null && template.getSeckillSkuId() == null) || template.getSeckillPrice() == null) {
                 throw new BizException("Invalid flash sale coupon");
             }
             BigDecimal discount = BigDecimal.ZERO;
             for (CartItem item : items) {
-                if (template.getSeckillProductId().equals(item.getProductId())
-                    && item.getPrice().compareTo(template.getSeckillPrice()) > 0) {
+                boolean matchSku = item.getSkuId() != null && item.getSkuId().equals(template.getSeckillSkuId());
+                boolean matchProd = item.getProductId() != null && item.getProductId().equals(template.getSeckillProductId());
+                if ((matchSku || matchProd) && item.getPrice().compareTo(template.getSeckillPrice()) > 0) {
                     BigDecimal line = item.getPrice().subtract(template.getSeckillPrice())
                         .multiply(BigDecimal.valueOf(item.getQuantity()));
                     discount = discount.add(line);

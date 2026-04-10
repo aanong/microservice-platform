@@ -1,27 +1,27 @@
 package com.demo.stock.dto;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 
-public class CategoryUpdateRequest {
+public class CategoryTreeNode {
 
-    @NotBlank(message = "name is required")
+    private Long id;
     private String name;
-
-    @NotBlank(message = "code is required")
     private String code;
-
     private Long parentId;
-
+    private Integer level;
     private String imageUrl;
-
-    @NotNull(message = "sort is required")
     private Integer sort;
-
-    @NotNull(message = "status is required")
     private Integer status;
+    private List<CategoryTreeNode> children = new ArrayList<CategoryTreeNode>();
 
-    private String remark;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -45,6 +45,14 @@ public class CategoryUpdateRequest {
 
     public void setParentId(Long parentId) {
         this.parentId = parentId;
+    }
+
+    public Integer getLevel() {
+        return level;
+    }
+
+    public void setLevel(Integer level) {
+        this.level = level;
     }
 
     public String getImageUrl() {
@@ -71,11 +79,11 @@ public class CategoryUpdateRequest {
         this.status = status;
     }
 
-    public String getRemark() {
-        return remark;
+    public List<CategoryTreeNode> getChildren() {
+        return children;
     }
 
-    public void setRemark(String remark) {
-        this.remark = remark;
+    public void setChildren(List<CategoryTreeNode> children) {
+        this.children = children;
     }
 }

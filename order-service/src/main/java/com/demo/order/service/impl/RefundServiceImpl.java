@@ -16,6 +16,7 @@ import com.demo.order.mapper.PaymentRecordMapper;
 import com.demo.order.mapper.ProductStockMapper;
 import com.demo.order.mapper.RefundItemMapper;
 import com.demo.order.mapper.RefundMainMapper;
+import com.demo.order.mapper.SkuStockMapper;
 import com.demo.order.service.RefundService;
 import io.seata.spring.annotation.GlobalTransactional;
 import java.math.BigDecimal;
@@ -37,6 +38,7 @@ public class RefundServiceImpl implements RefundService {
     private final ProductStockMapper productStockMapper;
     private final PaymentRecordMapper paymentRecordMapper;
     private final OrderStatusLogMapper orderStatusLogMapper;
+    private final SkuStockMapper skuStockMapper;
 
     public RefundServiceImpl(OrderMainMapper orderMainMapper,
                              OrderItemMapper orderItemMapper,
@@ -44,7 +46,8 @@ public class RefundServiceImpl implements RefundService {
                              RefundItemMapper refundItemMapper,
                              ProductStockMapper productStockMapper,
                              PaymentRecordMapper paymentRecordMapper,
-                             OrderStatusLogMapper orderStatusLogMapper) {
+                             OrderStatusLogMapper orderStatusLogMapper,
+                             SkuStockMapper skuStockMapper) {
         this.orderMainMapper = orderMainMapper;
         this.orderItemMapper = orderItemMapper;
         this.refundMainMapper = refundMainMapper;
@@ -52,6 +55,7 @@ public class RefundServiceImpl implements RefundService {
         this.productStockMapper = productStockMapper;
         this.paymentRecordMapper = paymentRecordMapper;
         this.orderStatusLogMapper = orderStatusLogMapper;
+        this.skuStockMapper = skuStockMapper;
     }
 
     @Override
@@ -128,7 +132,11 @@ public class RefundServiceImpl implements RefundService {
             item.setUpdateTime(LocalDateTime.now());
             orderItemMapper.updateById(item);
 
-            productStockMapper.addStock(item.getProductId(), refundQty);
+            if (item.getSkuId() != null) {
+                skuStockMapper.addStock(item.getSkuId(), refundQty);
+            } else {
+                productStockMapper.addStock(item.getProductId(), refundQty);
+            }
             refundAmount = refundAmount.add(lineRefund);
 
             if (!fullRefund) {

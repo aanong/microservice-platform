@@ -1,5 +1,7 @@
 package com.demo.order.service.impl;
 
+import com.demo.common.entity.Sku;
+import com.demo.order.mapper.SkuStockMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.demo.common.entity.Product;
 import com.demo.order.cache.OrderCacheKeys;
@@ -22,18 +24,62 @@ public class CartServiceImpl implements CartService {
     private final CartItemMapper cartItemMapper;
     private final ProductStockMapper productStockMapper;
     private final RedisJsonCacheHelper cacheHelper;
+    private final SkuStockMapper skuStockMapper;
 
     public CartServiceImpl(CartItemMapper cartItemMapper,
                            ProductStockMapper productStockMapper,
-                           RedisJsonCacheHelper cacheHelper) {
+                           RedisJsonCacheHelper cacheHelper,
+                           SkuStockMapper skuStockMapper) {
         this.cartItemMapper = cartItemMapper;
         this.productStockMapper = productStockMapper;
         this.cacheHelper = cacheHelper;
+        this.skuStockMapper = skuStockMapper;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public CartItem add(AddCartItemRequest request) {
+        if (request.getSkuId() != null) {
+            Sku sku = skuStockMapper.selectById(request.getSkuId());
+            if (sku == null) {
+                throw new BizException("SKU not found: " + request.getSkuId());
+            }
+            if (sku.getStock() == null || sku.getStock() < request.getQuantity()) {
+                throw new BizException("Insufficient stock for SKU: " + request.getSkuId());
+            }
+
+            CartItem exists = cartItemMapper.selectOne(new LambdaQueryWrapper<CartItem>()
+                .eq(CartItem::getUserId, request.getUserId())
+                .eq(CartItem::getSkuId, request.getSkuId()));
+
+            if (exists != null) {
+                exists.setQuantity(exists.getQuantity() + request.getQuantity());
+                exists.setPrice(sku.getSalePrice());
+                exists.setUpdateTime(LocalDateTime.now());
+                cartItemMapper.updateById(exists);
+                return exists;
+            }
+
+            CartItem cartItem = new CartItem();
+            cartItem.setUserId(request.getUserId());
+            cartItem.setSkuId(sku.getId());
+            cartItem.setSpuId(sku.getSpuId());
+            cartItem.setSpecJson(sku.getSpecJson());
+            cartItem.setProductName(sku.getSpuName());
+            cartItem.setSkuCode(sku.getSkuCode());
+            cartItem.setPrice(sku.getSalePrice());
+            cartItem.setQuantity(request.getQuantity());
+            cartItem.setChecked(1);
+            cartItem.setCreateTime(LocalDateTime.now());
+            cartItem.setUpdateTime(LocalDateTime.now());
+            cartItemMapper.insert(cartItem);
+            return cartItem;
+        }
+
+        if (request.getProductId() == null) {
+            throw new BizException("productId or skuId must be provided");
+        }
+
         Product product = productStockMapper.selectById(request.getProductId());
         if (product == null) {
             throw new BizException("Product not found: " + request.getProductId());

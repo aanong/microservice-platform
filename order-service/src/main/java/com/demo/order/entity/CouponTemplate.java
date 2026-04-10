@@ -18,6 +18,7 @@ public class CouponTemplate {
     private BigDecimal thresholdAmount;
     private BigDecimal discountAmount;
     private BigDecimal seckillPrice;
+    private Long seckillSkuId;
     private Long seckillProductId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;

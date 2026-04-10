@@ -11,6 +11,10 @@ public class CategoryCreateRequest {
     @NotBlank(message = "code is required")
     private String code;
 
+    private Long parentId;
+
+    private String imageUrl;
+
     @NotNull(message = "sort is required")
     private Integer sort;
 
@@ -33,6 +37,22 @@ public class CategoryCreateRequest {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public Integer getSort() {

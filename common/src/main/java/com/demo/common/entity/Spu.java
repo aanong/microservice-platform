@@ -5,19 +5,19 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 
-@TableName("mall_category")
-public class Category {
+@TableName("mall_spu")
+public class Spu {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+    private String spuCode;
     private String name;
-    private String code;
-    private Long parentId;
-    private Integer level;
-    private String imageUrl;
-    private Integer sort;
+    private Long categoryId;
+    private Long brandId;
+    private String mainImageUrl;
+    private String detailImages;
+    private String description;
     private Integer status;
-    private String remark;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
@@ -29,6 +29,14 @@ public class Category {
         this.id = id;
     }
 
+    public String getSpuCode() {
+        return spuCode;
+    }
+
+    public void setSpuCode(String spuCode) {
+        this.spuCode = spuCode;
+    }
+
     public String getName() {
         return name;
     }
@@ -37,44 +45,44 @@ public class Category {
         this.name = name;
     }
 
-    public String getCode() {
-        return code;
+    public Long getCategoryId() {
+        return categoryId;
     }
 
-    public void setCode(String code) {
-        this.code = code;
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 
-    public Long getParentId() {
-        return parentId;
+    public Long getBrandId() {
+        return brandId;
     }
 
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
+    public void setBrandId(Long brandId) {
+        this.brandId = brandId;
     }
 
-    public Integer getLevel() {
-        return level;
+    public String getMainImageUrl() {
+        return mainImageUrl;
     }
 
-    public void setLevel(Integer level) {
-        this.level = level;
+    public void setMainImageUrl(String mainImageUrl) {
+        this.mainImageUrl = mainImageUrl;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    public String getDetailImages() {
+        return detailImages;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setDetailImages(String detailImages) {
+        this.detailImages = detailImages;
     }
 
-    public Integer getSort() {
-        return sort;
+    public String getDescription() {
+        return description;
     }
 
-    public void setSort(Integer sort) {
-        this.sort = sort;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Integer getStatus() {
@@ -83,14 +91,6 @@ public class Category {
 
     public void setStatus(Integer status) {
         this.status = status;
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
-        this.remark = remark;
     }
 
     public LocalDateTime getCreateTime() {

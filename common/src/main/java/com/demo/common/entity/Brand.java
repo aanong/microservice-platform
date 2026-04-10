@@ -5,18 +5,16 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 
-@TableName("mall_category")
-public class Category {
+@TableName("mall_brand")
+public class Brand {
 
     @TableId(type = IdType.AUTO)
     private Long id;
     private String name;
     private String code;
-    private Long parentId;
-    private Integer level;
-    private String imageUrl;
-    private Integer sort;
+    private String logoUrl;
     private Integer status;
+    private Integer sort;
     private String remark;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
@@ -45,36 +43,12 @@ public class Category {
         this.code = code;
     }
 
-    public Long getParentId() {
-        return parentId;
+    public String getLogoUrl() {
+        return logoUrl;
     }
 
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
-    }
-
-    public Integer getLevel() {
-        return level;
-    }
-
-    public void setLevel(Integer level) {
-        this.level = level;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public Integer getSort() {
-        return sort;
-    }
-
-    public void setSort(Integer sort) {
-        this.sort = sort;
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
     }
 
     public Integer getStatus() {
@@ -83,6 +57,14 @@ public class Category {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
     }
 
     public String getRemark() {
