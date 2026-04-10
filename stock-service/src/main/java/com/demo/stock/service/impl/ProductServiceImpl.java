@@ -28,9 +28,9 @@ public class ProductServiceImpl implements ProductService {
     private final RedisJsonCacheHelper cacheHelper;
 
     public ProductServiceImpl(ProductMapper productMapper,
-                              CategoryMapper categoryMapper,
-                              ProductEventPublisher productEventPublisher,
-                              RedisJsonCacheHelper cacheHelper) {
+            CategoryMapper categoryMapper,
+            ProductEventPublisher productEventPublisher,
+            RedisJsonCacheHelper cacheHelper) {
         this.productMapper = productMapper;
         this.categoryMapper = categoryMapper;
         this.productEventPublisher = productEventPublisher;
@@ -142,7 +142,7 @@ public class ProductServiceImpl implements ProductService {
 
     private void checkSkuExists(String skuCode, Long excludeId) {
         LambdaQueryWrapper<Product> query = new LambdaQueryWrapper<Product>()
-            .eq(Product::getSkuCode, skuCode);
+                .eq(Product::getSkuCode, skuCode);
         if (excludeId != null) {
             query.ne(Product::getId, excludeId);
         }
