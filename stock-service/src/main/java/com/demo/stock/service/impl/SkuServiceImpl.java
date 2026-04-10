@@ -2,7 +2,8 @@ package com.demo.stock.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.demo.common.entity.Sku;
-import com.demo.stock.exception.BizException;
+import com.literature.common.core.exception.BizException;
+import com.literature.common.core.model.ErrorCode;
 import com.demo.stock.mapper.SkuMapper;
 import com.demo.stock.service.SkuService;
 import java.math.BigDecimal;
@@ -71,7 +72,7 @@ public class SkuServiceImpl implements SkuService {
     private Sku requireSku(Long id) {
         Sku sku = skuMapper.selectById(id);
         if (sku == null) {
-            throw new BizException("Sku not found, id=" + id);
+            throw new BizException(ErrorCode.NOT_FOUND, "Sku not found, id=" + id);
         }
         return sku;
     }

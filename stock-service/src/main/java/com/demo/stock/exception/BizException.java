@@ -1,6 +1,6 @@
 package com.demo.stock.exception;
 
-public class BizException extends RuntimeException {
+public class BizException extends com.literature.common.core.exception.BizException {
 
     public BizException(String message) {
         super(message);
