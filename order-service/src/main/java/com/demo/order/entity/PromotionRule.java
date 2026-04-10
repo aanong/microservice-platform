@@ -8,25 +8,15 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
-@TableName("coupon_template")
-public class CouponTemplate {
-
+@TableName("promotion_rule")
+public class PromotionRule {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String name;
-    private String type;
-    private String ownerType;
-    private Long shopId;
+    private Long activityId;
     private BigDecimal thresholdAmount;
     private BigDecimal discountAmount;
     private BigDecimal seckillPrice;
-    private Long seckillSkuId;
-    private Long seckillProductId;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
-    private Integer totalCount;
-    private Integer remainCount;
-    private Integer status;
+    private String skuIds; // JSON array of SKU IDs
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

@@ -8,22 +8,15 @@ import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
-@TableName("order_main")
-public class OrderMain {
-
+@TableName("pay_order")
+public class PayOrder {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String orderNo;
+    private String payOrderNo;
     private Long userId;
-    private Long shopId;
-    private Long payOrderId;
-    private String orderStatus;
-    private String paymentStatus;
-    private String shippingStatus;
     private BigDecimal totalAmount;
-    private BigDecimal discountAmount;
     private BigDecimal payAmount;
-    private Long couponUserId;
+    private String paymentStatus;
     private LocalDateTime paidTime;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/spus")
+@RequestMapping("/api/merchant/spus")
 public class SpuController {
 
     private final SpuService spuService;

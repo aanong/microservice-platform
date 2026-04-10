@@ -31,5 +31,9 @@ public final class BizConstants {
     public static final String COUPON_STATUS_UNUSED = "UNUSED";
     public static final String COUPON_STATUS_USED = "USED";
 
+    public static final String PROMOTION_TYPE_FULL_REDUCTION = "FULL_REDUCTION";
+    public static final String PROMOTION_TYPE_FLASH_SALE = "FLASH_SALE";
+    public static final String PROMOTION_TYPE_DIRECT_REDUCTION = "DIRECT_REDUCTION";
+
     public static final String REFUND_STATUS_SUCCESS = "REFUND_SUCCESS";
 }

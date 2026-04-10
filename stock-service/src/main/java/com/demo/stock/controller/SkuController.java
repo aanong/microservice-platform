@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/skus")
+@RequestMapping("/api/merchant/skus")
 public class SkuController {
 
     private final SkuService skuService;

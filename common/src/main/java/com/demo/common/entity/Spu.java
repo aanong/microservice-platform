@@ -14,6 +14,7 @@ public class Spu {
     private String name;
     private Long categoryId;
     private Long brandId;
+    private Long shopId;
     private String mainImageUrl;
     private String detailImages;
     private String description;
@@ -59,6 +60,14 @@ public class Spu {
 
     public void setBrandId(Long brandId) {
         this.brandId = brandId;
+    }
+
+    public Long getShopId() {
+        return shopId;
+    }
+
+    public void setShopId(Long shopId) {
+        this.shopId = shopId;
     }
 
     public String getMainImageUrl() {

@@ -14,6 +14,7 @@ public class Sku {
     private Long id;
     private String skuCode;
     private Long spuId;
+    private Long shopId;
     private String specSignature;
     private String specJson;
     private BigDecimal salePrice;
@@ -48,6 +49,14 @@ public class Sku {
 
     public void setSpuId(Long spuId) {
         this.spuId = spuId;
+    }
+
+    public Long getShopId() {
+        return shopId;
+    }
+
+    public void setShopId(Long shopId) {
+        this.shopId = shopId;
     }
 
     public String getSpecSignature() {

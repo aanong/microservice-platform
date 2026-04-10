@@ -53,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
     private final ShipmentTraceMapper shipmentTraceMapper;
     private final RedisJsonCacheHelper cacheHelper;
     private final SkuStockMapper skuStockMapper;
+    private final com.demo.order.service.PromotionService promotionService;
 
     public OrderServiceImpl(CartItemMapper cartItemMapper,
                             CouponUserMapper couponUserMapper,
@@ -64,7 +65,8 @@ public class OrderServiceImpl implements OrderService {
                             ShipmentMapper shipmentMapper,
                             ShipmentTraceMapper shipmentTraceMapper,
                             RedisJsonCacheHelper cacheHelper,
-                            SkuStockMapper skuStockMapper) {
+                            SkuStockMapper skuStockMapper,
+                            com.demo.order.service.PromotionService promotionService) {
         this.cartItemMapper = cartItemMapper;
         this.couponUserMapper = couponUserMapper;
         this.couponTemplateMapper = couponTemplateMapper;
@@ -76,6 +78,7 @@ public class OrderServiceImpl implements OrderService {
         this.shipmentTraceMapper = shipmentTraceMapper;
         this.cacheHelper = cacheHelper;
         this.skuStockMapper = skuStockMapper;
+        this.promotionService = promotionService;
     }
 
     @Override
@@ -123,9 +126,11 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
+        BigDecimal promotionDiscount = calculatePromotionDiscount(totalAmount, cartItems, promotionService.listActivePromotions());
+
         CouponUser couponUser = null;
         CouponTemplate couponTemplate = null;
-        BigDecimal discount = BigDecimal.ZERO;
+        BigDecimal couponDiscount = BigDecimal.ZERO;
 
         if (request.getCouponUserId() != null) {
             couponUser = couponUserMapper.selectById(request.getCouponUserId());
@@ -139,9 +144,11 @@ public class OrderServiceImpl implements OrderService {
             if (couponTemplate == null) {
                 throw new BizException("Coupon template missing");
             }
-            discount = calculateDiscount(totalAmount, cartItems, couponTemplate);
+            BigDecimal currentTotal = totalAmount.subtract(promotionDiscount).max(BigDecimal.ZERO);
+            couponDiscount = calculateDiscount(currentTotal, cartItems, couponTemplate);
         }
 
+        BigDecimal discount = promotionDiscount.add(couponDiscount);
         BigDecimal payAmount = totalAmount.subtract(discount);
         if (payAmount.compareTo(BigDecimal.ZERO) < 0) {
             payAmount = BigDecimal.ZERO;
@@ -310,6 +317,48 @@ public class OrderServiceImpl implements OrderService {
         }
 
         throw new BizException("Unsupported coupon type: " + template.getType());
+    }
+
+    private BigDecimal calculatePromotionDiscount(BigDecimal total, List<CartItem> items, List<com.demo.order.entity.PromotionActivity> activities) {
+        BigDecimal totalDiscount = BigDecimal.ZERO;
+        for (com.demo.order.entity.PromotionActivity activity : activities) {
+            com.demo.order.entity.PromotionRule rule = promotionService.getRuleByActivityId(activity.getId());
+            if (rule == null) continue;
+
+            if (BizConstants.PROMOTION_TYPE_DIRECT_REDUCTION.equals(activity.getType())) {
+                if (rule.getDiscountAmount() != null) {
+                    totalDiscount = totalDiscount.add(rule.getDiscountAmount());
+                }
+            } else if (BizConstants.PROMOTION_TYPE_FULL_REDUCTION.equals(activity.getType())) {
+                if (rule.getThresholdAmount() != null && rule.getDiscountAmount() != null) {
+                    if (total.compareTo(rule.getThresholdAmount()) >= 0) {
+                        totalDiscount = totalDiscount.add(rule.getDiscountAmount());
+                    }
+                }
+            } else if (BizConstants.PROMOTION_TYPE_FLASH_SALE.equals(activity.getType())) {
+                if (rule.getSeckillPrice() != null && rule.getSkuIds() != null) {
+                    List<String> skuIdList = null;
+                    try {
+                        skuIdList = new com.fasterxml.jackson.databind.ObjectMapper().readValue(
+                            rule.getSkuIds(), new com.fasterxml.jackson.core.type.TypeReference<List<String>>(){}
+                        );
+                    } catch (Exception e) {}
+                    
+                    if (skuIdList != null) {
+                        for (CartItem item : items) {
+                            if (item.getSkuId() != null && skuIdList.contains(String.valueOf(item.getSkuId()))) {
+                                if (item.getPrice().compareTo(rule.getSeckillPrice()) > 0) {
+                                    BigDecimal diff = item.getPrice().subtract(rule.getSeckillPrice())
+                                            .multiply(BigDecimal.valueOf(item.getQuantity()));
+                                    totalDiscount = totalDiscount.add(diff);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return totalDiscount;
     }
 
     private void logStatus(Long orderId, String orderNo, String fromStatus, String toStatus, String remark) {

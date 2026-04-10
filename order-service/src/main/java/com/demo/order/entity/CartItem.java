@@ -14,6 +14,7 @@ public class CartItem {
     @TableId(type = IdType.AUTO)
     private Long id;
     private Long userId;
+    private Long shopId;
     private Long skuId;
     private Long spuId;
     private String specJson;
