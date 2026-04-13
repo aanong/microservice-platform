@@ -43,7 +43,7 @@ docker-compose up -d
 
 The project now includes a unified logging and trace baseline:
 
-- `common` auto-configures JSON logs to `stdout`
+- `common-logging-spring-boot-starter` auto-configures JSON logs to `stdout`
 - every HTTP request gets an `X-Trace-Id`
 - gateway WebClient calls propagate the same trace id downstream
 - RocketMQ publisher and consumer logs carry the same trace id when possible

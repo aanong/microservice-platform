@@ -1,8 +1,7 @@
 package com.demo.common.mq;
 
-import com.demo.common.logging.LoggingUtils;
-import com.demo.common.logging.TraceContext;
 import java.util.Map;
+import java.util.UUID;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,14 +66,14 @@ public abstract class AbstractEventPublisher {
         if (!enabled) {
             return;
         }
-        String traceId = TraceContext.getOrCreateTraceId();
+        String traceId = resolveTraceId();
         payload.put("traceId", traceId);
         MDC.put("mq.topic", topic);
         MDC.put("mq.messageKey", traceId);
         try {
             rocketMQTemplate.convertAndSend(topic, payload);
             log.info("Publish event success. topic={}, traceId={}, payload={}",
-                topic, traceId, LoggingUtils.shortenPayload(payload));
+                topic, traceId, shortenPayload(payload));
         } catch (Exception ex) {
             log.warn("Publish event failed. topic={}, payload={}. Continue without blocking business.",
                 topic, payload, ex);
@@ -96,5 +95,27 @@ public abstract class AbstractEventPublisher {
      */
     protected boolean isEnabled() {
         return enabled;
+    }
+
+    private String resolveTraceId() {
+        String traceId = MDC.get("trace.id");
+        if (traceId != null && !traceId.trim().isEmpty()) {
+            return traceId;
+        }
+        traceId = UUID.randomUUID().toString().replace("-", "");
+        MDC.put("trace.id", traceId);
+        MDC.put("span.id", "0");
+        return traceId;
+    }
+
+    private String shortenPayload(Object payload) {
+        if (payload == null) {
+            return "";
+        }
+        String text = String.valueOf(payload);
+        if (text.length() <= 512) {
+            return text;
+        }
+        return text.substring(0, 512) + "...";
     }
 }

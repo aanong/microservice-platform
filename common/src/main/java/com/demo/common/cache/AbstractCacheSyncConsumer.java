@@ -1,12 +1,12 @@
 package com.demo.common.cache;
 
-import com.demo.common.logging.TraceContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,13 +86,13 @@ public abstract class AbstractCacheSyncConsumer implements RocketMQListener<Stri
             if (event == null || event.getTable() == null) {
                 continue;
             }
-            TraceContext.bind(resolveTraceId(event), "0", serviceName, null, null);
+            bindTraceContext(resolveTraceId(event), serviceName);
             MDC.put("mq.topic", getTopic());
             MDC.put("mq.consumerGroup", getConsumerGroup());
             MDC.put("mq.messageKey", resolveEventId(event));
             if (!markIdempotent(event, serviceName)) {
                 log.debug("Skip duplicated cache sync event. service={}, eventId={}", serviceName, resolveEventId(event));
-                TraceContext.clear();
+                clearTraceContext();
                 continue;
             }
             try {
@@ -109,7 +109,7 @@ public abstract class AbstractCacheSyncConsumer implements RocketMQListener<Stri
                     serviceName, resolveEventId(event), event.getTable(), event.getOpType(), event.getPk(), event.getSourcePos(), ex);
                 throw ex;
             } finally {
-                TraceContext.clear();
+                clearTraceContext();
             }
         }
     }
@@ -260,7 +260,7 @@ public abstract class AbstractCacheSyncConsumer implements RocketMQListener<Stri
         if (event.getTraceId() != null && !event.getTraceId().trim().isEmpty()) {
             return event.getTraceId();
         }
-        return TraceContext.generateTraceId();
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
     protected String getTopic() {
@@ -269,5 +269,20 @@ public abstract class AbstractCacheSyncConsumer implements RocketMQListener<Stri
 
     protected String getConsumerGroup() {
         return "unknown-group";
+    }
+
+    private void bindTraceContext(String traceId, String serviceName) {
+        MDC.put("trace.id", traceId);
+        MDC.put("span.id", "0");
+        MDC.put("service.name", serviceName);
+    }
+
+    private void clearTraceContext() {
+        MDC.remove("trace.id");
+        MDC.remove("span.id");
+        MDC.remove("service.name");
+        MDC.remove("mq.topic");
+        MDC.remove("mq.consumerGroup");
+        MDC.remove("mq.messageKey");
     }
 }

@@ -29,7 +29,7 @@ Each service should keep:
 - `spring.application.name=<service-name>`
 - `logging.platform.service-name=<service-name>`
 
-The common module now auto-configures:
+The `common-logging-spring-boot-starter` module now auto-configures:
 
 - JSON logs to `stdout`
 - `X-Trace-Id` HTTP propagation
