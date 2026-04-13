@@ -129,6 +129,84 @@ services:
     networks:
       - mall-net
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - TZ=Asia/Shanghai
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+    networks:
+      - mall-net
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.12.0
+    container_name: logstash
+    depends_on:
+      - elasticsearch
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - mall-net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    restart: always
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - I18N_LOCALE=zh-CN
+      - TZ=Asia/Shanghai
+    ports:
+      - "5601:5601"
+    networks:
+      - mall-net
+
+  skywalking-oap:
+    image: apache/skywalking-oap-server:10.1.0
+    container_name: skywalking-oap
+    depends_on:
+      - elasticsearch
+    restart: always
+    environment:
+      - SW_STORAGE=elasticsearch
+      - SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200
+      - TZ=Asia/Shanghai
+    ports:
+      - "11800:11800"
+      - "12800:12800"
+    networks:
+      - mall-net
+
+  skywalking-ui:
+    image: apache/skywalking-ui:10.1.0
+    container_name: skywalking-ui
+    depends_on:
+      - skywalking-oap
+    restart: always
+    environment:
+      - SW_OAP_ADDRESS=http://skywalking-oap:12800
+      - TZ=Asia/Shanghai
+    ports:
+      - "8088:8080"
+    networks:
+      - mall-net
+
 networks:
   mall-net:
     driver: bridge

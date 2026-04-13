@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: gateway-service
   cloud:
     gateway:
       routes:
@@ -35,3 +37,8 @@ management:
     web:
       exposure:
         include: health,info
+
+logging:
+  platform:
+    service-name: gateway-service
+    slow-request-threshold-ms: 800

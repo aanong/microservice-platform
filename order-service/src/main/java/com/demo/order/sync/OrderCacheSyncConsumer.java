@@ -19,14 +19,31 @@ import org.springframework.stereotype.Component;
     consumerGroup = "${mall.cache-sync.consumer-group:order-cache-sync-group}")
 public class OrderCacheSyncConsumer extends AbstractCacheSyncConsumer {
 
+    private final String topic;
+    private final String consumerGroup;
+
     public OrderCacheSyncConsumer(ObjectMapper objectMapper,
                                   StringRedisTemplate stringRedisTemplate,
-                                  List<CacheSyncHandler> handlers) {
+                                  List<CacheSyncHandler> handlers,
+                                  @org.springframework.beans.factory.annotation.Value("${mall.cache-sync.topic:cache-sync-order}") String topic,
+                                  @org.springframework.beans.factory.annotation.Value("${mall.cache-sync.consumer-group:order-cache-sync-group}") String consumerGroup) {
         super(objectMapper, stringRedisTemplate, handlers);
+        this.topic = topic;
+        this.consumerGroup = consumerGroup;
     }
 
     @Override
     protected String getServiceName() {
         return "order";
+    }
+
+    @Override
+    protected String getTopic() {
+        return topic;
+    }
+
+    @Override
+    protected String getConsumerGroup() {
+        return consumerGroup;
     }
 }

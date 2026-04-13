@@ -1,9 +1,12 @@
 package com.demo.common.mq;
 
+import com.demo.common.logging.LoggingUtils;
+import com.demo.common.logging.TraceContext;
 import java.util.Map;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * MQ 事件发布器抽象基类。
@@ -64,11 +67,20 @@ public abstract class AbstractEventPublisher {
         if (!enabled) {
             return;
         }
+        String traceId = TraceContext.getOrCreateTraceId();
+        payload.put("traceId", traceId);
+        MDC.put("mq.topic", topic);
+        MDC.put("mq.messageKey", traceId);
         try {
             rocketMQTemplate.convertAndSend(topic, payload);
+            log.info("Publish event success. topic={}, traceId={}, payload={}",
+                topic, traceId, LoggingUtils.shortenPayload(payload));
         } catch (Exception ex) {
             log.warn("Publish event failed. topic={}, payload={}. Continue without blocking business.",
                 topic, payload, ex);
+        } finally {
+            MDC.remove("mq.topic");
+            MDC.remove("mq.messageKey");
         }
     }
 

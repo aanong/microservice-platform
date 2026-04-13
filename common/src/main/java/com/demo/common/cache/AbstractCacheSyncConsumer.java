@@ -1,5 +1,6 @@
 package com.demo.common.cache;
 
+import com.demo.common.logging.TraceContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.Map;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -84,8 +86,13 @@ public abstract class AbstractCacheSyncConsumer implements RocketMQListener<Stri
             if (event == null || event.getTable() == null) {
                 continue;
             }
+            TraceContext.bind(resolveTraceId(event), "0", serviceName, null, null);
+            MDC.put("mq.topic", getTopic());
+            MDC.put("mq.consumerGroup", getConsumerGroup());
+            MDC.put("mq.messageKey", resolveEventId(event));
             if (!markIdempotent(event, serviceName)) {
                 log.debug("Skip duplicated cache sync event. service={}, eventId={}", serviceName, resolveEventId(event));
+                TraceContext.clear();
                 continue;
             }
             try {
@@ -101,6 +108,8 @@ public abstract class AbstractCacheSyncConsumer implements RocketMQListener<Stri
                 log.error("Cache sync failed. service={}, eventId={}, table={}, opType={}, pk={}, sourcePos={}",
                     serviceName, resolveEventId(event), event.getTable(), event.getOpType(), event.getPk(), event.getSourcePos(), ex);
                 throw ex;
+            } finally {
+                TraceContext.clear();
             }
         }
     }
@@ -183,6 +192,9 @@ public abstract class AbstractCacheSyncConsumer implements RocketMQListener<Stri
         event.setTs(flatMessage.getEs() != null ? flatMessage.getEs() : flatMessage.getTs());
         event.setPk(extractPk(row));
         event.setSourcePos("flat:" + (flatMessage.getId() == null ? "_" : flatMessage.getId()));
+        if (row.get("traceId") != null) {
+            event.setTraceId(String.valueOf(row.get("traceId")));
+        }
         return event;
     }
 
@@ -242,5 +254,20 @@ public abstract class AbstractCacheSyncConsumer implements RocketMQListener<Stri
 
     private String resolveEventId(CacheSyncEvent event) {
         return buildEventKey(event);
+    }
+
+    private String resolveTraceId(CacheSyncEvent event) {
+        if (event.getTraceId() != null && !event.getTraceId().trim().isEmpty()) {
+            return event.getTraceId();
+        }
+        return TraceContext.generateTraceId();
+    }
+
+    protected String getTopic() {
+        return "unknown-topic";
+    }
+
+    protected String getConsumerGroup() {
+        return "unknown-group";
     }
 }

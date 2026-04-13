@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: shop-service
+
+logging:
+  platform:
+    service-name: shop-service
+    slow-request-threshold-ms: 800

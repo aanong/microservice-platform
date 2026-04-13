@@ -13,6 +13,7 @@ public class CacheSyncEvent {
     private Map<String, Object> after;
     private Long ts;
     private String sourcePos;
+    private String traceId;
 
     public String getEventId() {
         return eventId;
@@ -84,5 +85,13 @@ public class CacheSyncEvent {
 
     public void setSourcePos(String sourcePos) {
         this.sourcePos = sourcePos;
+    }
+
+    public String getTraceId() {
+        return traceId;
+    }
+
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
     }
 }

@@ -1,3 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 com.demo.common.config.CommonCacheAutoConfiguration,\
+com.demo.common.config.PlatformLoggingAutoConfiguration,\
 com.literature.common.core.exception.GlobalExceptionHandler

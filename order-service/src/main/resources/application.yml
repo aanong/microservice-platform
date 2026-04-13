@@ -2,6 +2,8 @@ server:
   port: 8082
 
 spring:
+  application:
+    name: order-service
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://192.168.5.79:3306/microservice_mall?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
@@ -60,3 +62,8 @@ management:
     web:
       exposure:
         include: health,info
+
+logging:
+  platform:
+    service-name: order-service
+    slow-request-threshold-ms: 800

@@ -39,4 +39,20 @@
 docker-compose up -d
 ```
 
+## Observability
+
+The project now includes a unified logging and trace baseline:
+
+- `common` auto-configures JSON logs to `stdout`
+- every HTTP request gets an `X-Trace-Id`
+- gateway WebClient calls propagate the same trace id downstream
+- RocketMQ publisher and consumer logs carry the same trace id when possible
+- ELK stores structured logs and SkyWalking provides topology and trace views
+
+Infra references:
+
+- observability stack compose: [docker/infra/docker-compose.yml](docker/infra/docker-compose.yml)
+- logstash pipeline: [docker/infra/logstash/pipeline/logstash.conf](docker/infra/logstash/pipeline/logstash.conf)
+- setup notes: [docker/infra/observability/README.md](docker/infra/observability/README.md)
+
 启动数据库服务并初始化后，按顺序启动Nacos，各业务微服务，最后启动 Gateway 即可访问。
